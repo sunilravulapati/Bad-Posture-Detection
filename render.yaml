@@ -3,9 +3,12 @@ services:
     name: posture-backend
     env: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
-    workingDir: backend
+    buildFilter:
+      paths:
+        - backend/**
+    rootDir: backend
     envVars:
       - key: PORT
         value: 8000
@@ -13,9 +16,13 @@ services:
   - type: web
     name: posture-frontend
     env: static
+    plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: dist
-    workingDir: frontend
+    buildFilter:
+      paths:
+        - frontend/**
+    rootDir: frontend
     envVars:
       - key: VITE_BACKEND_URL
         value: https://posture-backend.onrender.com
