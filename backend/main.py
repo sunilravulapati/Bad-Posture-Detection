@@ -9,7 +9,13 @@ import cv2
 import tempfile
 from posture_logic import analyze_image, analyze_video, summarize_video
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+origins = [
+    os.getenv("ALLOWED_ORIGINS", "*")
+]
+
 
 app.add_middleware(
     CORSMiddleware,

@@ -8,6 +8,8 @@ const VideoUpload = () => {
   const [videoURL, setVideoURL] = useState(null);
   const [mode, setMode] = useState("frame");
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const handleUpload = async () => {
     if (!videoFile) {
       alert("Please select a video file first.");
@@ -20,8 +22,17 @@ const VideoUpload = () => {
     setFeedback([]);
 
     try {
-      const res = await axios.post(`http://localhost:8000/analyze?mode=${mode}`, formData);
-      setFeedback(res.data.feedback || []);
+      const response = await axios.post(
+        `${backendUrl}/analyze?mode=${mode}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setFeedback(response.data.feedback || []);
     } catch (err) {
       alert("Upload failed. Please check if your backend is running and CORS is allowed.");
       console.error(err);
@@ -40,6 +51,7 @@ const VideoUpload = () => {
     <div className="bg-white p-6 rounded-xl shadow-lg max-w-xl mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Posture Video Analyzer</h2>
 
+      {/* Mode Toggle */}
       <div className="mb-4">
         <label className="mr-2 font-medium">Analysis Mode:</label>
         <select
@@ -52,6 +64,7 @@ const VideoUpload = () => {
         </select>
       </div>
 
+      {/* File Input */}
       <input
         type="file"
         accept="video/*"
@@ -59,10 +72,12 @@ const VideoUpload = () => {
         className="block w-full mb-4 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700"
       />
 
+      {/* Preview */}
       {videoURL && (
         <video src={videoURL} controls className="w-full h-auto mb-4 rounded" />
       )}
 
+      {/* Analyze Button */}
       <button
         onClick={handleUpload}
         className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
@@ -71,6 +86,7 @@ const VideoUpload = () => {
         {loading ? "Analyzing..." : "Analyze Video"}
       </button>
 
+      {/* AI Summary */}
       {mode === "summary" && !loading && feedback && feedback.accuracy && (
         <div className="mt-6 bg-blue-50 p-4 rounded text-blue-900 shadow">
           <h3 className="text-lg font-semibold mb-2">Summary Report:</h3>
@@ -80,6 +96,7 @@ const VideoUpload = () => {
         </div>
       )}
 
+      {/* Frame-by-Frame Feedback */}
       {mode === "frame" && feedback.length > 0 && (
         <div className="mt-6">
           <h3 className="text-xl font-semibold mb-2 text-gray-800">Feedback:</h3>
@@ -102,6 +119,7 @@ const VideoUpload = () => {
         </div>
       )}
 
+      {/* No Issues */}
       {!loading && feedback.length === 0 && videoFile && mode === "frame" && (
         <p className="mt-4 text-sm text-gray-500">No posture issues detected.</p>
       )}
