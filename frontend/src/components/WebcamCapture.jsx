@@ -28,7 +28,7 @@ const WebcamCapture = () => {
         }
       } catch (err) {
         console.error("Error accessing webcam:", err);
-        setMessage(`Error: Could not access webcam. Please ensure it's connected and permissions are granted. (${err.name}: ${err.message})`);
+        setMessage(`Error: Could not access webcam. (${err.name}: ${err.message})`);
       }
     };
 
@@ -36,60 +36,48 @@ const WebcamCapture = () => {
 
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
   const capture = async () => {
-    if (!videoRef.current || !canvasRef.current || !stream) {
-      setMessage("Error: Webcam not ready or canvas not found.");
-      return;
-    }
+    if (!videoRef.current || !canvasRef.current) return;
 
-    setMessage("Capturing and analyzing...");
-    setFeedback(null);
     setIsLoading(true);
+    setMessage("Capturing image and analyzing...");
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
-
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(async (blob) => {
       if (!blob) {
-        setMessage("Error: Failed to capture image from canvas.");
+        alert("Failed to capture image");
         setIsLoading(false);
         return;
       }
 
-      const file = new File([blob], "frame.jpeg", { type: "image/jpeg" });
-
       const formData = new FormData();
-      formData.append("frame", file);
+      formData.append("file", blob, "frame.jpg");
 
       try {
-        const res = await axios.post(`${API_BASE_URL}/analyze-frame`, formData, {
+        const response = await axios.post(`${API_BASE_URL}/analyze-frame`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
-        setFeedback(res.data.result);
-        setMessage("Analysis complete!");
+
+        setFeedback(response.data.feedback || response.data.result);
+        setMessage("Analysis complete.");
       } catch (error) {
         console.error("Error analyzing frame:", error);
-        if (error.response) {
-          setMessage(`Backend error: ${error.response.status} - ${error.response.data.detail || error.response.statusText}`);
-          console.error("Error response data:", error.response.data);
-        } else if (error.request) {
-          setMessage("Network error: No response from backend. Is the server running?");
-        } else {
-          setMessage(`Error: ${error.message}`);
-        }
+        alert("Backend error!");
+        setMessage("Error occurred while analyzing.");
       } finally {
         setIsLoading(false);
       }
@@ -106,13 +94,13 @@ const WebcamCapture = () => {
           playsInline
           muted
           className="rounded-lg w-full max-w-md"
-          style={{ display: stream ? 'block' : 'none' }}
+          style={{ display: stream ? "block" : "none" }}
         />
         <canvas ref={canvasRef} style={{ display: "none" }} />
         {!stream && (
-            <div className="w-full max-w-md h-80 bg-gray-200 flex items-center justify-center rounded-lg text-gray-500">
-                <p>Waiting for webcam...</p>
-            </div>
+          <div className="w-full max-w-md h-80 bg-gray-200 flex items-center justify-center rounded-lg text-gray-500">
+            <p>Waiting for webcam...</p>
+          </div>
         )}
       </div>
       <button
@@ -120,7 +108,7 @@ const WebcamCapture = () => {
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
         disabled={!stream || isLoading}
       >
-        {isLoading ? 'Analyzing...' : 'Capture & Analyze'}
+        {isLoading ? "Analyzing..." : "Capture & Analyze"}
       </button>
 
       {message && (
@@ -135,11 +123,12 @@ const WebcamCapture = () => {
           <p className="text-lg mb-2">
             <strong className="text-gray-900">Posture:</strong>{" "}
             <span className={feedback.posture === "good" ? "text-green-600" : "text-red-600"}>
-              {feedback.posture?.toUpperCase() || ''}
+              {feedback.posture?.toUpperCase() || ""}
             </span>
           </p>
           <p className="text-lg">
-            <strong className="text-gray-900">Reason:</strong> {feedback.reason || 'No reason provided.'}
+            <strong className="text-gray-900">Reason:</strong>{" "}
+            {feedback.reason || "No reason provided."}
           </p>
         </div>
       )}
@@ -148,3 +137,6 @@ const WebcamCapture = () => {
 };
 
 export default WebcamCapture;
+// Note: This component uses the webcam to capture a single frame and analyze it.
+// It does not handle video recording or multiple frames. For a full video analysis,
+// consider using a different approach or integrating with the existing VideoUpload component.
