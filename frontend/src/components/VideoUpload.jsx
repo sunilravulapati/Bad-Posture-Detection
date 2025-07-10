@@ -47,6 +47,16 @@ const VideoUpload = () => {
     setVideoURL(file ? URL.createObjectURL(file) : null);
   };
 
+  // Show loading spinner if analyzing
+  if (loading) {
+    return (
+      <div className="text-center mt-20">
+        <p className="text-lg text-gray-600">Analyzing video, please wait...</p>
+        <div className="animate-spin mt-4 h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg max-w-xl mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Posture Video Analyzer</h2>
@@ -97,7 +107,7 @@ const VideoUpload = () => {
       )}
 
       {/* Frame-by-Frame Feedback */}
-      {mode === "frame" && feedback.length > 0 && (
+      {mode === "frame" && Array.isArray(feedback) && feedback.length > 0 && (
         <div className="mt-6">
           <h3 className="text-xl font-semibold mb-2 text-gray-800">Feedback:</h3>
           <ul className="space-y-2 max-h-64 overflow-y-auto">
@@ -120,7 +130,7 @@ const VideoUpload = () => {
       )}
 
       {/* No Issues */}
-      {!loading && feedback.length === 0 && videoFile && mode === "frame" && (
+      {!loading && Array.isArray(feedback) && feedback.length === 0 && videoFile && mode === "frame" && (
         <p className="mt-4 text-sm text-gray-500">No posture issues detected.</p>
       )}
     </div>
